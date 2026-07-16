@@ -412,6 +412,41 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
   #lSync{display:none}
   .pa-pcard-num{font-size:15px}
 }
+
+/* ===== PORTRAIT / MOBILE RESPONSIVE ===== */
+@media screen and (orientation: portrait) and (max-width: 768px) {
+  /* PA Screen - stack vertically */
+  .pa-body { flex-direction: column !important; }
+  .pa-left { width: 100% !important; border-right: none !important; border-bottom: 2px solid var(--border) !important; max-height: 45vh; overflow-y: auto; }
+  .pa-right { width: 100% !important; padding: 10px !important; }
+  
+  /* Coordinator screen */
+  .cbody { flex-direction: column !important; }
+  .cleft { width: 100% !important; max-height: 50vh; overflow-y: auto; border-right: none !important; border-bottom: 2px solid var(--border) !important; }
+  .cright { width: 100% !important; }
+  
+  /* Modals full width */
+  .modal { width: 95vw !important; max-width: 95vw !important; }
+  
+  /* Header compact */
+  .chdr, .pa-hdr { padding: 0 10px !important; }
+  .chdr-stats { gap: 6px !important; }
+  
+  /* Map modal full screen */
+  #mapContainer, #mapContainerK { 
+    width: 100vw !important; 
+    height: 85vh !important; 
+  }
+}
+
+@media screen and (orientation: portrait) {
+  /* Rotate hint - subtle */
+  #rotateHint { display: flex !important; }
+}
+@media screen and (orientation: landscape) {
+  #rotateHint { display: none !important; }
+}
+
 </style>
 </head>
 <body>

@@ -4,7 +4,7 @@
   "description": "Permit To Work - Block 9 CPF",
   "start_url": "./PTW_Pro_Block9_FINAL-38-18.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#1a5c1a",
   "icons": [
