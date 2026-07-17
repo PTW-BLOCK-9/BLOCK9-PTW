@@ -2496,12 +2496,15 @@ function renderMap(){
   const img=document.getElementById('mapImg');
   if(!img||!img.naturalWidth||!img.naturalHeight)return;
   const W=img.naturalWidth, H=img.naturalHeight;
-  // Reference image was 910x1280 — scale to actual image
   const REF_W=910, REF_H=1280;
   const scaleX=W/REF_W, scaleY=H/REF_H;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.style.width=img.offsetWidth+'px';
-  svg.style.height=img.offsetHeight+'px';
+  // Use container size or viewport size — not img.offsetWidth which can be 0
+  const cont=document.getElementById('mapContainer');
+  const dispW=cont?cont.offsetWidth||(window.innerWidth*0.95):img.offsetWidth||W;
+  const dispH=cont?cont.offsetHeight||(window.innerHeight-60):img.offsetHeight||H;
+  svg.style.width=dispW+'px';
+  svg.style.height=dispH+'px';
   const R=W*0.022;
   // Enrich permits with area — manual zone (dashboard edit) takes priority over Excel
   const active=pArr().filter(p=>p.active&&p.location==='CPF').map(p=>{
