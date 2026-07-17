@@ -1627,7 +1627,28 @@ function initKMapEvents(){
   c.addEventListener('touchend',()=>{kMapDrag=false;});
 }
 
-function renderKMapInline(){
+async function renderKMapInline(){
+  // Ensure calib and label data loaded before rendering
+  if(!Object.keys(calibAreas).length){
+    try{
+      const fb=await fbGet('mapCalib').catch(()=>null);
+      if(fb&&Object.keys(fb).length){
+        Object.assign(calibAreas,fb);
+      } else {
+        const s=localStorage.getItem('mapCalibAreas');
+        if(s){const d=JSON.parse(s);Object.assign(calibAreas,d);}
+      }
+    }catch(e){}
+  }
+  if(!Object.keys(labelOffsets).length){
+    try{
+      const fb=await fbGet('labelSettings/CPF').catch(()=>null);
+      if(fb&&fb.offsets)Object.assign(labelOffsets,fb.offsets);
+      if(fb&&fb.fontSize)labelFontSize=fb.fontSize;
+      const s=localStorage.getItem('ptw_label_settings');
+      if(s){const d=JSON.parse(s);if(d.offsets)Object.assign(labelOffsets,d.offsets);if(d.fontSize)labelFontSize=d.fontSize;}
+    }catch(e){}
+  }
   const svg=document.getElementById('kMapSvgInline');
   const img=document.getElementById('kMapImgInline');
   const noImg=document.getElementById('kMapNoImg');
@@ -1642,6 +1663,9 @@ function renderKMapInline(){
   svg.setAttribute('height', H);
   svg.style.width=W+'px';
   svg.style.height=H+'px';
+  svg.style.position='absolute';
+  svg.style.top='0';
+  svg.style.left='0';
   const R=W*0.022*(typeof mapCircleScale!=='undefined'?mapCircleScale:1);
   const allAreas={...MAP_AREAS,...calibAreas};
   // Enrich permits — manual zone (dashboard edit) takes priority over Excel
@@ -1831,13 +1855,32 @@ function renderMapK(){
   const W=img.naturalWidth,H=img.naturalHeight;
   const REF_H=1280;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.style.width=img.offsetWidth+'px';svg.style.height=img.offsetHeight+'px';
-  const R=W*0.022;
+  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  svg.style.width=W+'px';svg.style.height=H+'px';
+  const R=W*0.022*(typeof mapCircleScale!=='undefined'?mapCircleScale:1);
   const allAreas={...MAP_AREAS,...calibAreas};
   const _rloc=typeof kMapCurrentLoc!=='undefined'?kMapCurrentLoc:'CPF';
   const active=pArr().filter(p=>p.active&&p.location===_rloc).map(p=>{const xm=lookupExcel(_rloc,p.num,p.type);const mz=p.zone&&p.zone!=='—'?p.zone:'';return{...p,_area:mz||(xm&&xm.area)||''};});
   const byArea={};
   active.forEach(p=>{const zone=(p._area||'').toString().trim();if(!zone||zone==='—')return;const key=getAreaKey(zone);if(!key)return;if(!byArea[key])byArea[key]={};if(!byArea[key][p.type])byArea[key][p.type]=[];byArea[key][p.type].push(p);});
+
+  // Draw permanent labels for areas WITHOUT active permits
+  const kLFS=labelFontSize||18;
+  Object.entries(allAreas).forEach(([areaKey,area])=>{
+    if(byArea[areaKey])return;
+    const off=labelOffsets[areaKey]||{dx:0,dy:0};
+    const cx=(area.x/100)*W+(off.dx||0);
+    const cy=area.y*(H/REF_H)-R-8+(off.dy||0);
+    const lbl=area.name||areaKey;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx);t.setAttribute('y',cy);
+    t.setAttribute('text-anchor','middle');t.setAttribute('fill','#ffffff');
+    t.setAttribute('font-size',kLFS);t.setAttribute('font-family','IBM Plex Mono,monospace');
+    t.setAttribute('font-weight','700');t.setAttribute('paint-order','stroke');
+    t.setAttribute('stroke','rgba(0,0,0,0.9)');t.setAttribute('stroke-width','3');
+    t.setAttribute('pointer-events','none');t.textContent=lbl;
+    svg.appendChild(t);
+  });
   Object.entries(byArea).forEach(([areaKey,typeMap])=>{
     const area=allAreas[areaKey];if(!area)return;
     const cx=(area.x/100)*W,cy=area.y*(H/REF_H);
@@ -2063,6 +2106,7 @@ async function openMapK(loc){
   if(!imgData) return; // no map to init
 
   await loadCalibData();
+  await loadLabelSettings();
   const doFit=()=>{
     initMapEventsK();
     const c=document.getElementById('mapContainerK');
