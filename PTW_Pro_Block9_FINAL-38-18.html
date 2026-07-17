@@ -493,9 +493,9 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
       <button onclick="toggleCalib()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border-radius:3px">✕ EXIT</button>
     </div>
     <div style="flex:1;overflow:hidden;position:relative;background:#1a1a2e;touch-action:none;direction:ltr" id="mapContainer">
-      <div id="mapViewport" style="position:absolute;top:0;left:0;width:100%;height:100%" style="position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:0 0;cursor:default">
+      <div id="mapViewport" style="position:absolute;top:0;left:0;transform-origin:0 0;cursor:default">
         <div style="position:relative;display:inline-block">
-          <img id="mapImg" src="" alt="CPF Map" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;user-select:none;-webkit-user-drag:none">
+          <img id="mapImg" src="" alt="CPF Map" style="display:block;position:absolute;top:0;left:0;max-width:none;user-select:none;-webkit-user-drag:none">
           <svg id="mapSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all" viewBox="0 0 1000 1280" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
       </div>
@@ -570,7 +570,7 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
         </div>
         <div id="mapViewportK" style="position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:0 0;cursor:default">
           <div style="position:relative;display:inline-block">
-            <img id="mapImgK" src="" alt="Map" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;user-select:none;-webkit-user-drag:none">
+            <img id="mapImgK" src="" alt="Map" style="display:block;position:absolute;top:0;left:0;max-width:none;user-select:none;-webkit-user-drag:none">
             <svg id="mapSvgK" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all" viewBox="0 0 1000 1280" preserveAspectRatio="xMidYMid meet"></svg>
           </div>
         </div>
