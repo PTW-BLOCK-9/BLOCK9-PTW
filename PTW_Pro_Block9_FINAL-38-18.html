@@ -3624,12 +3624,9 @@ function uploadMapImage(inp){
   const r=new FileReader();
   r.onload=async e=>{
     mapImgData=e.target.result;
-    const sizeMB=(mapImgData.length*0.75/1024/1024).toFixed(1);
-    // 1. Save to localStorage — instantly available to KEBL on same device
+    // 1. Save to localStorage — instantly available on same device
     try{localStorage.setItem('ptw_map_cpf',mapImgData);}catch(le){}
-    // 2. Try Firebase (may fail if rules not set)
-    fbSet('mapImage/CPF',{data:mapImgData,ts:Date.now()},120000).catch(e=>console.warn('Map Firebase:',e.message));
-    // 3. Update all maps immediately
+    // 2. Update all maps immediately with full quality
     const img=document.getElementById('mapImg');
     if(img){img.src=mapImgData;img.onload=()=>renderMap();}
     const imgK=document.getElementById('kMapImgInline');
@@ -3641,22 +3638,44 @@ function uploadMapImage(inp){
         loadCalibData().then(()=>renderKMapInline());
       };
     }
-    SL(false);
-    toast('✅ Map uploaded ('+sizeMB+'MB)');
+    // 3. Compress image for Firebase (max 2000px width, JPEG 80%)
+    const original=new Image();
+    original.onload=async function(){
+      const MAX=2000;
+      const scale=Math.min(MAX/original.width, MAX/original.height, 1);
+      const w=Math.round(original.width*scale);
+      const h=Math.round(original.height*scale);
+      const cv=document.createElement('canvas');
+      cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(original,0,0,w,h);
+      const compressed=cv.toDataURL('image/jpeg',0.80);
+      const sizeMB=(compressed.length*0.75/1024/1024).toFixed(1);
+      // Save compressed to Firebase
+      await fbSet('mapImage/CPF',{data:compressed,ts:Date.now()},120000)
+        .catch(e=>console.warn('Map Firebase:',e.message));
+      SL(false);
+      toast('✅ Map uploaded & synced ('+sizeMB+'MB compressed)');
+    };
+    original.src=mapImgData;
   };
   r.readAsDataURL(file);
 }
 async function loadMapImage(){
-  const d=await fbGet('mapImage/CPF');
-  if(!d)return;
-  const src=d.url||d.data;
+  // Try localStorage first (fast)
+  let src=null;
+  try{src=localStorage.getItem('ptw_map_cpf');}catch(e){}
+  // Then try Firebase
+  if(!src){
+    const d=await fbGet('mapImage/CPF').catch(()=>null);
+    if(d) src=d.url||d.data||null;
+    // Cache in localStorage for next time
+    if(src){try{localStorage.setItem('ptw_map_cpf',src);}catch(e){}}
+  }
   if(!src)return;
   mapImgData=src;
-  // Update office map
+  // Update office map (always set src, not only when modal open)
   const img=document.getElementById('mapImg');
-  if(img&&document.getElementById('mMap').classList.contains('open')){
-    img.src=src;img.onload=()=>renderMap();
-  }
+  if(img){img.src=src;img.onload=()=>renderMap();}
   // Update KEBL inline map
   const imgK=document.getElementById('kMapImgInline');
   if(imgK){
