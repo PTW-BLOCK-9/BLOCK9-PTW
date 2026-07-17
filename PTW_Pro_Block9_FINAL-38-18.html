@@ -1495,7 +1495,7 @@ function renderKMapPanel(){
   active.forEach(p=>{const z=(p._area||'').toString().trim();if(!z||z==='—')return;const k=getAreaKey(z);if(!k)return;if(!byArea[k])byArea[k]={};if(!byArea[k][p.type])byArea[k][p.type]=[];byArea[k][p.type].push(p);});
 
   // Draw permanent labels for all areas
-  const kLFS2=labelFontSize||18;
+  const kLFS2=Math.round(W*0.022*(labelFontSize/18)*0.55);
   Object.entries(allAreas).forEach(([areaKey,area])=>{
     if(byArea[areaKey])return;
     const off=labelOffsets[areaKey]||{dx:0,dy:0};
@@ -1685,7 +1685,7 @@ async function renderKMapInline(){
   });
 
   // Draw permanent labels for ALL areas (no active permits)
-  const kLabelFS=labelFontSize||18;
+  const kLabelFS=Math.round(W*0.022*(labelFontSize/18)*0.55);
   Object.entries(allAreas).forEach(([areaKey,area])=>{
     if(byArea[areaKey])return; // skip if has permits
     const off=labelOffsets[areaKey]||{dx:0,dy:0};
@@ -1865,7 +1865,8 @@ function renderMapK(){
   active.forEach(p=>{const zone=(p._area||'').toString().trim();if(!zone||zone==='—')return;const key=getAreaKey(zone);if(!key)return;if(!byArea[key])byArea[key]={};if(!byArea[key][p.type])byArea[key][p.type]=[];byArea[key][p.type].push(p);});
 
   // Draw permanent labels for areas WITHOUT active permits
-  const kLFS=labelFontSize||18;
+  // Use same proportional size as coordinator map
+  const kLFS=Math.round(W*0.022*(labelFontSize/18)*0.55);
   Object.entries(allAreas).forEach(([areaKey,area])=>{
     if(byArea[areaKey])return;
     const off=labelOffsets[areaKey]||{dx:0,dy:0};
