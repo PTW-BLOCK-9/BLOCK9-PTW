@@ -1883,18 +1883,28 @@ function uploadMapImageK(inp){
   const loc=kMapCurrentLoc;
   const reader=new FileReader();
   reader.onload=e=>{
-    const data=e.target.result;
-    if(loc==='CPF') mapImgData=data;
-    else mapImgDataFLY=data;
-    const img=document.getElementById('mapImgK');
-    if(img){img.src=data;}
-    fbSet('mapImage/'+loc,{data:data,ts:Date.now()},120000).catch(()=>{});
-    document.getElementById('kMapNoUpload').style.display='none';
-    setTimeout(()=>{
-      mapResetK();
-      loadCalibData().then(()=>renderMapK());
-    },300);
-    toast('✅ Map uploaded for '+(loc==='CPF'?'CPF Office':'Fly Camp'));
+    const original=new Image();
+    original.onload=function(){
+      // Compress: max 2000px, JPEG 80%
+      const MAX=2000;
+      const scale=Math.min(MAX/original.width,MAX/original.height,1);
+      const w=Math.round(original.width*scale);
+      const h=Math.round(original.height*scale);
+      const cv=document.createElement('canvas');
+      cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(original,0,0,w,h);
+      const data=cv.toDataURL('image/jpeg',0.80);
+      if(loc==='CPF'){mapImgData=data;try{localStorage.setItem('ptw_map_cpf',data);}catch(le){}}
+      else{mapImgDataFLY=data;try{localStorage.setItem('ptw_map_fly',data);}catch(le){}}
+      const img=document.getElementById('mapImgK');
+      if(img){img.src=data;}
+      fbSet('mapImage/'+loc,{data:data,ts:Date.now()},120000).catch(()=>{});
+      document.getElementById('kMapNoUpload').style.display='none';
+      setTimeout(()=>{mapResetK();loadCalibData().then(()=>renderMapK());},300);
+      const sizeMB=(data.length*0.75/1024/1024).toFixed(1);
+      toast('✅ Map uploaded ('+sizeMB+'MB) for '+(loc==='CPF'?'CPF Office':'Fly Camp'));
+    };
+    original.src=e.target.result;
   };
   reader.readAsDataURL(inp.files[0]);
 }
@@ -3638,18 +3648,20 @@ function openMap(){
     try{cached=localStorage.getItem('ptw_map_cpf');}catch(e){}
     if(cached){loadAndShow(cached);}
     else{
-      // Load from Firebase
+      // Load from Firebase directly
       SL(true,'LOADING MAP...');
       fbGet('mapImage/CPF').then(d=>{
         SL(false);
+        console.log('[MAP] openMap fbGet result:',d?'got':'null', d&&d.data?'has data':'no data', d&&d.url?'has url':'no url');
         if(d&&(d.data||d.url)){
           const src=d.data||d.url;
           try{localStorage.setItem('ptw_map_cpf',src);}catch(e){}
           loadAndShow(src);
         } else {
           img.alt='Click UPLOAD MAP to add the CPF map image';
+          console.warn('[MAP] no map data in Firebase mapImage/CPF');
         }
-      }).catch(()=>{SL(false);});
+      }).catch(e=>{SL(false);console.error('[MAP] Firebase error:',e);});
     }
   }
 }
