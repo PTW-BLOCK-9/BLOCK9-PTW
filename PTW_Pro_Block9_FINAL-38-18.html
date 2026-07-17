@@ -550,19 +550,21 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
     <div style="flex:1;display:flex;overflow:hidden;min-height:0">
 
       <!-- LEFT PANEL: PERMITS LIST -->
-      <div id="kMapPermitsList" style="width:400px;min-width:320px;max-width:45%;background:#0d1f2d;border-left:2px solid #00cc88;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0">
+      <div id="kMapPermitsList" style="width:400px;min-width:320px;max-width:45%;background:#0d1f2d;border-left:2px solid #00cc88;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:width .3s,min-width .3s,max-width .3s">
         <!-- Panel Header -->
         <div style="background:linear-gradient(135deg,#0a1a28,#102030);border-bottom:1px solid rgba(0,204,136,.25);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
           <div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#00cc88;letter-spacing:2px">ACTIVE PERMITS</div>
             <div id="kMapPermitCount" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);margin-top:2px">— TOTAL</div>
           </div>
-          <div style="display:flex;gap:5px">
+          <div style="display:flex;gap:5px;align-items:center">
             <button id="kMapFilterAll" onclick="kMapFilter('ALL',this)" style="background:rgba(0,204,136,.2);border:1px solid #00cc88;color:#00cc88;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:1px">ALL</button>
             <button id="kMapFilterSP" onclick="kMapFilter('SPARK',this)" style="background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.4);color:#f5c518;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:1px">SP</button>
             <button id="kMapFilterHO" onclick="kMapFilter('HOT',this)" style="background:rgba(204,34,0,.1);border:1px solid rgba(204,34,0,.4);color:#ff6633;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:1px">HO</button>
             <button id="kMapFilterCO" onclick="kMapFilter('COLD',this)" style="background:rgba(0,85,204,.1);border:1px solid rgba(0,85,204,.4);color:#5588ff;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:1px">CO</button>
             <button id="kMapFilterBR" onclick="kMapFilter('BREAKING',this)" style="background:rgba(80,80,80,.15);border:1px solid rgba(80,80,80,.4);color:#aaa;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:8px;cursor:pointer;letter-spacing:1px">BR</button>
+            <!-- Hide/Show toggle -->
+            <button id="kListToggleBtn" onclick="toggleKList()" title="Hide/Show List" style="background:rgba(0,204,136,.2);border:1px solid #00cc88;color:#00cc88;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;border-radius:3px;margin-left:4px">◀</button>
           </div>
         </div>
         <!-- Permits Scroll Area -->
@@ -1485,6 +1487,8 @@ function renderKMapPanel(){
   svg.setAttribute('width',W); svg.setAttribute('height',H);
   svg.style.width=W+'px'; svg.style.height=H+'px';
   const R=W*0.022*(typeof mapCircleScale!=='undefined'?mapCircleScale:1);
+  if(!Object.keys(calibAreas).length){try{const _s=localStorage.getItem('mapCalibAreas');if(_s)Object.assign(calibAreas,JSON.parse(_s));}catch(e){}}
+  if(!Object.keys(labelOffsets).length){try{const _ls=localStorage.getItem('ptw_label_settings');if(_ls){const _d=JSON.parse(_ls);if(_d.fontSize)labelFontSize=_d.fontSize;if(_d.offsets)Object.assign(labelOffsets,_d.offsets);}}catch(e){}}
   const allAreas={...MAP_AREAS,...calibAreas};
   const active=pArr().filter(p=>p.active&&p.location==='CPF').map(p=>{const xm=lookupExcel('CPF',p.num,p.type);const mz=p.zone&&p.zone!=='—'?p.zone:'';return{...p,_area:mz||(xm&&xm.area)||''};});
   const byArea={};
@@ -1784,12 +1788,12 @@ async function initKMapInline(){
     img.onload=()=>{
       initKMapEvents();
       kMapFit();
-      loadCalibData().then(()=>renderKMapInline());
+      loadCalibData().then(()=>loadLabelSettings().then(()=>renderKMapInline()));
     };
     if(img.complete&&img.naturalWidth){
       initKMapEvents();
       kMapFit();
-      loadCalibData().then(()=>renderKMapInline());
+      loadCalibData().then(()=>loadLabelSettings().then(()=>renderKMapInline()));
     }
   }else{
     if(noImg)noImg.style.display='flex';
@@ -1880,6 +1884,40 @@ function renderMapK(){
 // ── KEBL MAP SIDE PANEL: PERMITS LIST ──────────────────
 let kMapSideFilter='ALL';
 let kMapCurrentLoc='CPF'; // track which location the map is showing
+
+let kListVisible=true;
+function toggleKList(){
+  kListVisible=!kListVisible;
+  const panel=document.getElementById('kMapPermitsList');
+  const btn=document.getElementById('kListToggleBtn');
+  const body=document.getElementById('kMapPermitsBody');
+  if(kListVisible){
+    panel.style.width='400px';
+    panel.style.minWidth='320px';
+    panel.style.maxWidth='45%';
+    body.style.display='';
+    // Show filter buttons except toggle
+    ['kMapFilterAll','kMapFilterSP','kMapFilterHO','kMapFilterCO','kMapFilterBR'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='';
+    });
+    // Show title area
+    const title=document.getElementById('kMapPermitCount');if(title)title.parentElement.style.display='';
+    btn.textContent='◀';
+  } else {
+    panel.style.width='38px';
+    panel.style.minWidth='38px';
+    panel.style.maxWidth='38px';
+    body.style.display='none';
+    // Hide filter buttons
+    ['kMapFilterAll','kMapFilterSP','kMapFilterHO','kMapFilterCO','kMapFilterBR'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+    // Hide title area
+    const title=document.getElementById('kMapPermitCount');if(title)title.parentElement.style.display='none';
+    btn.textContent='▶';
+  }
+  setTimeout(()=>{kMapFit2();renderKMapInline();},350);
+}
 
 function kMapFilter(type,btn){
   kMapSideFilter=type;
@@ -3897,7 +3935,7 @@ function uploadMapImage(inp){
         imgK.onload=()=>{
           const n=document.getElementById('kMapNoImg');if(n)n.style.display='none';
           initKMapEvents();kMapFit();
-          loadCalibData().then(()=>renderKMapInline());
+          loadCalibData().then(()=>loadLabelSettings().then(()=>renderKMapInline()));
         };
       }
 
@@ -3938,8 +3976,8 @@ async function loadMapImage(){
   const imgK=document.getElementById('kMapImgInline');
   if(imgK){
     imgK.src=src;
-    imgK.onload=()=>{kMapFit();loadCalibData().then(()=>renderKMapInline());};
-    if(imgK.complete&&imgK.naturalWidth){kMapFit();loadCalibData().then(()=>renderKMapInline());}
+    imgK.onload=()=>{kMapFit();loadCalibData().then(()=>loadLabelSettings().then(()=>renderKMapInline()));};
+    if(imgK.complete&&imgK.naturalWidth){kMapFit();loadCalibData().then(()=>loadLabelSettings().then(()=>renderKMapInline()));}
   }
 }
 
@@ -4098,7 +4136,7 @@ async function enterK(){
   permits=JSON.parse(localStorage.getItem('c_p')||'{}');
   renderK();
   SL(true,'LOADING...');
-  try{await Promise.all([loadPermits(),loadExcelData()]);}catch(e){}
+  try{await Promise.all([loadPermits(),loadExcelData(),loadCalibData(),loadLabelSettings()]);}catch(e){}
   SL(false);
   renderK();
   initFirebaseSDK();
