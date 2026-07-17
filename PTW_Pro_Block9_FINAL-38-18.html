@@ -3696,22 +3696,32 @@ function uploadMapImage(inp){
   r.readAsDataURL(file);
 }
 async function loadMapImage(){
+  console.log('[MAP] loadMapImage started');
   // Try localStorage first (fast)
   let src=null;
   try{src=localStorage.getItem('ptw_map_cpf');}catch(e){}
+  if(src){console.log('[MAP] found in localStorage, size:',src.length);}
   // Then try Firebase
   if(!src){
-    const d=await fbGet('mapImage/CPF').catch(()=>null);
+    console.log('[MAP] not in localStorage, trying Firebase...');
+    const d=await fbGet('mapImage/CPF').catch(e=>{console.error('[MAP] Firebase error:',e);return null;});
+    console.log('[MAP] Firebase result:',d?'got data':'null', d?'keys:'+Object.keys(d):'');
     if(d) src=d.url||d.data||null;
-    // Cache in localStorage for next time
-    if(src){try{localStorage.setItem('ptw_map_cpf',src);}catch(e){}}
+    if(src){
+      console.log('[MAP] got from Firebase, size:',src.length);
+      try{localStorage.setItem('ptw_map_cpf',src);}catch(e){console.warn('[MAP] localStorage save failed:',e);}
+    }
   }
-  if(!src)return;
+  if(!src){console.warn('[MAP] no map data found anywhere');return;}
   mapImgData=src;
-  // Update office map (always set src, not only when modal open)
+  console.log('[MAP] setting mapImgData, length:',src.length);
   const img=document.getElementById('mapImg');
-  if(img){img.src=src;img.onload=()=>renderMap();}
-  // Update KEBL inline map
+  if(img){
+    img.onload=()=>{console.log('[MAP] mapImg loaded successfully',img.naturalWidth,'x',img.naturalHeight);renderMap();};
+    img.onerror=e=>{console.error('[MAP] mapImg load ERROR:',e);};
+    img.src=src;
+    console.log('[MAP] set img.src');
+  }
   const imgK=document.getElementById('kMapImgInline');
   if(imgK){
     imgK.src=src;
