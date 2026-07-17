@@ -3599,24 +3599,59 @@ let mapImgDataFLY='';
 function openMap(){
   const modal=document.getElementById('mMap');
   const img=document.getElementById('mapImg');
-  if(mapImgData){img.src=mapImgData;}
-  else{img.alt='Click UPLOAD MAP to add the CPF map image';img.style.minHeight='400px';img.style.background='#1a2535';img.style.width='100%';}
   modal.classList.add('open');
+
   const doFit=()=>{
     initMapEvents();
     const c=document.getElementById('mapContainer');
     if(!c||!img.naturalWidth)return;
-    const cr=c.getBoundingClientRect();
-    if(!cr.width||!cr.height)return;
-    // Fit to height, align left
-    mapScale=cr.height/img.naturalHeight;
-    mapX=0;
-    mapY=0;
-    mapApplyTransform();
-    loadCalibData().then(()=>renderMap());
+    // Retry if container has no size yet (Google Sites iframe)
+    let tries=0;
+    const tryFit=()=>{
+      const cr=c.getBoundingClientRect();
+      const W=cr.width||(window.visualViewport?window.visualViewport.width*0.95:window.innerWidth*0.95);
+      const H=cr.height||(window.visualViewport?window.visualViewport.height-60:window.innerHeight-60);
+      if(!W||!H){if(tries++<40)setTimeout(tryFit,100);return;}
+      mapScale=Math.max(H/img.naturalHeight, W/img.naturalWidth);
+      mapX=0; mapY=0;
+      mapApplyTransform();
+      loadCalibData().then(()=>renderMap());
+    };
+    tryFit();
   };
-  if(img.complete&&img.naturalWidth){setTimeout(doFit,200);}
-  else{img.onload=()=>setTimeout(doFit,200);}
+
+  const loadAndShow=src=>{
+    mapImgData=src;
+    img.src=src;
+    if(img.complete&&img.naturalWidth){setTimeout(doFit,200);}
+    else{img.onload=()=>setTimeout(doFit,200);}
+  };
+
+  if(mapImgData){
+    // Already loaded
+    img.src=mapImgData;
+    if(img.complete&&img.naturalWidth){setTimeout(doFit,200);}
+    else{img.onload=()=>setTimeout(doFit,200);}
+  } else {
+    // Try localStorage first
+    let cached=null;
+    try{cached=localStorage.getItem('ptw_map_cpf');}catch(e){}
+    if(cached){loadAndShow(cached);}
+    else{
+      // Load from Firebase
+      SL(true,'LOADING MAP...');
+      fbGet('mapImage/CPF').then(d=>{
+        SL(false);
+        if(d&&(d.data||d.url)){
+          const src=d.data||d.url;
+          try{localStorage.setItem('ptw_map_cpf',src);}catch(e){}
+          loadAndShow(src);
+        } else {
+          img.alt='Click UPLOAD MAP to add the CPF map image';
+        }
+      }).catch(()=>{SL(false);});
+    }
+  }
 }
 function uploadMapImage(inp){
   const file=inp.files[0];if(!file)return;
