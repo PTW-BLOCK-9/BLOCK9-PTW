@@ -216,7 +216,7 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
 .psi{display:flex;align-items:center;gap:5px}
 .psd{width:6px;height:6px;border-radius:50%;animation:blink 2s infinite}
 .psn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px}
-.pss{font-size:11px;color:var(--text2)}.psp{color:var(--border2)}
+.pss{font-size:12px;color:#ffffff;font-weight:700}.psp{color:var(--border2)}
 .pabody{display:grid;grid-template-columns:330px 1fr;flex:1;min-height:0;overflow:hidden}
 .pform{background:var(--surface);border-left:2px solid var(--border);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
 .sthdr{display:flex;justify-content:space-between;margin-bottom:8px}
@@ -480,6 +480,8 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
           <input type="file" accept="image/*" style="display:none" onchange="uploadMapImage(this)">
         </label>
         <button id="calibBtn" onclick="toggleCalib()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.4);color:#ffc800;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:1px">📍 CALIBRATE</button>
+        <button id="labelMoveBtn" onclick="toggleLabelMode()" style="background:rgba(0,255,180,.15);border:1px solid rgba(0,255,180,.4);color:#00ffb4;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:1px">🔤 MOVE LABELS</button>
+        <button onclick="openAreasManager()" style="background:rgba(0,180,255,.15);border:1px solid rgba(0,180,255,.4);color:#00ccff;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:1px">✏️ EDIT AREAS</button>
         <button onclick="exportMap4K()" style="background:rgba(100,100,255,.15);border:1px solid rgba(100,100,255,.4);color:#aaaaff;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:1px">📸 4K</button>
         <button onclick="exportMapPhoto()" style="background:rgba(0,200,120,.15);border:1px solid rgba(0,200,120,.4);color:#00cc88;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:1px">🖼️ PHOTO</button>
         <button onclick="exportPermitsPDF()" style="background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.4);color:#ff8888;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:1px">📄 PDF</button>
@@ -492,18 +494,30 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
       <button onclick="saveCalibData()" style="background:#ffc800;color:#000;border:none;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;font-weight:700;border-radius:3px">💾 SAVE</button>
       <button onclick="toggleCalib()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border-radius:3px">✕ EXIT</button>
     </div>
+    <div id="labelMoveBar" style="display:none;background:#0d2018;border-bottom:2px solid #00ffb4;padding:8px 14px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#00ffb4;letter-spacing:1px;align-items:center;gap:10px;flex-wrap:wrap">
+      <span>🔤 LABEL MODE — اسحب أي رقم/اسم لتغيير مكانه</span>
+      <span style="color:rgba(255,255,255,.5);font-size:9px">Right-click على الرقم لتعديله أو حذفه</span>
+      <button onclick="labelFontSize=Math.min(labelFontSize+2,60);saveLabelSettings();renderMap();" style="background:#00ffb4;color:#000;border:none;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;font-weight:700;border-radius:3px">A+ تكبير</button>
+      <button onclick="labelFontSize=Math.max(labelFontSize-2,8);saveLabelSettings();renderMap();" style="background:rgba(0,255,180,.2);color:#00ffb4;border:1px solid #00ffb4;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;font-weight:700;border-radius:3px">A- تصغير</button>
+      <span style="color:#fff;font-size:9px">Size: <span id="labelFontSizeDisplay">18</span>px</span>
+      <button onclick="saveLabelSettings();toast('✅ Saved');toggleLabelMode();" style="background:#00ffb4;color:#000;border:none;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;font-weight:700;border-radius:3px">💾 SAVE & EXIT</button>
+      <button onclick="toggleLabelMode()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border-radius:3px">✕ EXIT</button>
+    </div>
     <div style="flex:1;overflow:hidden;position:relative;background:#1a1a2e;touch-action:none;direction:ltr" id="mapContainer">
       <div id="mapViewport" style="position:absolute;top:0;left:0;transform-origin:0 0;cursor:default">
         <div style="position:relative;display:inline-block">
           <img id="mapImg" src="" alt="CPF Map" style="display:block;position:absolute;top:0;left:0;max-width:none;user-select:none;-webkit-user-drag:none">
-          <svg id="mapSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all" viewBox="0 0 1000 1280" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="mapSvg" style="position:absolute;top:0;left:0;pointer-events:all"></svg>
         </div>
       </div>
       <!-- Zoom controls -->
       <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:10">
-        <button onclick="mapZoom(1.3)" style="width:36px;height:36px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:20px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center">+</button>
-        <button onclick="mapZoom(0.77)" style="width:36px;height:36px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:20px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center">−</button>
-        <button onclick="mapReset()" style="width:36px;height:36px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:11px;cursor:pointer;border-radius:4px;font-family:'IBM Plex Mono',monospace">FIT</button>
+        <button onclick="mapZoom(1.3)" title="Zoom In" style="width:36px;height:36px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:20px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center">+</button>
+        <button onclick="mapZoom(0.77)" title="Zoom Out" style="width:36px;height:36px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:20px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center">−</button>
+        <button onclick="mapReset()" title="Fit whole map" style="width:36px;height:36px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;font-size:11px;cursor:pointer;border-radius:4px;font-family:'IBM Plex Mono',monospace">FIT</button>
+        <div style="width:36px;height:1px;background:rgba(255,255,255,.2);margin:2px 0"></div>
+        <button onclick="mapCircleScale=Math.min(mapCircleScale+0.2,3);renderMap();" title="Bigger circles" style="width:36px;height:36px;background:#c8a000;border:none;color:#000;font-size:14px;cursor:pointer;border-radius:4px;font-weight:900">⬤+</button>
+        <button onclick="mapCircleScale=Math.max(mapCircleScale-0.2,0.3);renderMap();" title="Smaller circles" style="width:36px;height:36px;background:#c8a000;border:none;color:#000;font-size:14px;cursor:pointer;border-radius:4px;font-weight:900">⬤−</button>
       </div>
     </div>
     <!-- Area detail tooltip -->
@@ -571,7 +585,7 @@ body{background:var(--bg);color:var(--text);font-family:'Tajawal',sans-serif;min
         <div id="mapViewportK" style="position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:0 0;cursor:default">
           <div style="position:relative;display:inline-block">
             <img id="mapImgK" src="" alt="Map" style="display:block;position:absolute;top:0;left:0;max-width:none;user-select:none;-webkit-user-drag:none">
-            <svg id="mapSvgK" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all" viewBox="0 0 1000 1280" preserveAspectRatio="xMidYMid meet"></svg>
+            <svg id="mapSvgK" style="position:absolute;top:0;left:0;pointer-events:all"></svg>
           </div>
         </div>
         <!-- Upload button overlay (top-left, always visible) -->
@@ -1468,12 +1482,30 @@ function renderKMapPanel(){
   svg.innerHTML='';
   const W=img.naturalWidth,H=img.naturalHeight,REF_H=1280;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.style.width=img.offsetWidth+'px';svg.style.height=img.offsetHeight+'px';
-  const R=W*0.022;
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  svg.style.width=W+'px'; svg.style.height=H+'px';
+  const R=W*0.022*(typeof mapCircleScale!=='undefined'?mapCircleScale:1);
   const allAreas={...MAP_AREAS,...calibAreas};
   const active=pArr().filter(p=>p.active&&p.location==='CPF').map(p=>{const xm=lookupExcel('CPF',p.num,p.type);const mz=p.zone&&p.zone!=='—'?p.zone:'';return{...p,_area:mz||(xm&&xm.area)||''};});
   const byArea={};
   active.forEach(p=>{const z=(p._area||'').toString().trim();if(!z||z==='—')return;const k=getAreaKey(z);if(!k)return;if(!byArea[k])byArea[k]={};if(!byArea[k][p.type])byArea[k][p.type]=[];byArea[k][p.type].push(p);});
+
+  // Draw permanent labels for all areas
+  const kLFS2=labelFontSize||18;
+  Object.entries(allAreas).forEach(([areaKey,area])=>{
+    if(byArea[areaKey])return;
+    const off=labelOffsets[areaKey]||{dx:0,dy:0};
+    const cx=(area.x/100)*W+(off.dx||0);
+    const cy=area.y*(H/REF_H)-R-8+(off.dy||0);
+    const lbl=area.name||areaKey;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx);t.setAttribute('y',cy);t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','#ffffff');t.setAttribute('font-size',kLFS2);
+    t.setAttribute('font-family','IBM Plex Mono,monospace');t.setAttribute('font-weight','700');
+    t.setAttribute('paint-order','stroke');t.setAttribute('stroke','rgba(0,0,0,0.9)');
+    t.setAttribute('stroke-width','3');t.setAttribute('pointer-events','none');
+    t.textContent=lbl;svg.appendChild(t);
+  });
   Object.entries(byArea).forEach(([ak,tm])=>{
     const area=allAreas[ak];if(!area)return;
     const cx=(area.x/100)*W,cy=area.y*(H/REF_H);
@@ -1602,9 +1634,11 @@ function renderKMapInline(){
   const W=img.naturalWidth,H=img.naturalHeight;
   const REF_H=1280;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.style.width=img.offsetWidth+'px';
-  svg.style.height=img.offsetHeight+'px';
-  const R=W*0.022;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.style.width=W+'px';
+  svg.style.height=H+'px';
+  const R=W*0.022*(typeof mapCircleScale!=='undefined'?mapCircleScale:1);
   const allAreas={...MAP_AREAS,...calibAreas};
   // Enrich permits — manual zone (dashboard edit) takes priority over Excel
   const active=pArr().filter(p=>p.active&&p.location==='CPF').map(p=>{
@@ -1621,6 +1655,31 @@ function renderKMapInline(){
     if(!byArea[key][p.type])byArea[key][p.type]=[];
     byArea[key][p.type].push(p);
   });
+
+  // Draw permanent labels for ALL areas (no active permits)
+  const kLabelFS=labelFontSize||18;
+  Object.entries(allAreas).forEach(([areaKey,area])=>{
+    if(byArea[areaKey])return; // skip if has permits
+    const off=labelOffsets[areaKey]||{dx:0,dy:0};
+    const cx=(area.x/100)*W+(off.dx||0);
+    const cy=area.y*(H/REF_H)-R-8+(off.dy||0);
+    const lbl=area.name||areaKey;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx); t.setAttribute('y',cy);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('dominant-baseline','auto');
+    t.setAttribute('fill','#ffffff');
+    t.setAttribute('font-size',kLabelFS);
+    t.setAttribute('font-family','IBM Plex Mono, monospace');
+    t.setAttribute('font-weight','700');
+    t.setAttribute('paint-order','stroke');
+    t.setAttribute('stroke','rgba(0,0,0,0.9)');
+    t.setAttribute('stroke-width','3');
+    t.setAttribute('pointer-events','none');
+    t.textContent=lbl;
+    svg.appendChild(t);
+  });
+
   Object.entries(byArea).forEach(([areaKey,typeMap])=>{
     const area=allAreas[areaKey];if(!area)return;
     const cx=(area.x/100)*W,cy=area.y*(H/REF_H);
@@ -1986,6 +2045,66 @@ async function openMapK(loc){
 let calibMode=false;
 let calibAreas={};
 let dragItem=null, dragKey=null, dragOffX=0, dragOffY=0;
+// Label mode
+let labelMode=false;
+let labelFontSize=18;
+let labelOffsets={}; // {areaKey: {dx, dy}} offsets from default position
+let labelDragKey=null, labelDragOffX=0, labelDragOffY=0;
+
+// Global label drag handlers (added once)
+let _labelDragInit=false;
+let _labelDragStartX=0, _labelDragStartY=0;
+let _labelDragStartOffX=0, _labelDragStartOffY=0;
+
+function initLabelDragHandlers(){
+  if(_labelDragInit)return; _labelDragInit=true;
+  function onMove(clientX,clientY){
+    if(!labelDragKey)return;
+    // Delta in screen pixels / mapScale = delta in image pixels
+    const dx=(clientX-_labelDragStartX)/mapScale;
+    const dy=(clientY-_labelDragStartY)/mapScale;
+    if(!labelOffsets[labelDragKey])labelOffsets[labelDragKey]={dx:0,dy:0};
+    labelOffsets[labelDragKey].dx=Math.round(_labelDragStartOffX+dx);
+    labelOffsets[labelDragKey].dy=Math.round(_labelDragStartOffY+dy);
+    renderMap();
+  }
+  document.addEventListener('mousemove',e=>{if(labelDragKey)onMove(e.clientX,e.clientY);});
+  document.addEventListener('mouseup',()=>{labelDragKey=null;});
+  document.addEventListener('touchmove',e=>{
+    if(labelDragKey){e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);}
+  },{passive:false});
+  document.addEventListener('touchend',()=>{labelDragKey=null;});
+}
+
+function toggleLabelMode(){
+  labelMode=!labelMode;
+  if(labelMode)initLabelDragHandlers();
+  const bar=document.getElementById('labelMoveBar');
+  const btn=document.getElementById('labelMoveBtn');
+  bar.style.display=labelMode?'flex':'none';
+  btn.style.background=labelMode?'rgba(0,255,180,.35)':'rgba(0,255,180,.15)';
+  btn.style.color=labelMode?'#000':'#00ffb4';
+  renderMap();
+}
+
+function saveLabelSettings(){
+  const data={fontSize:labelFontSize, offsets:labelOffsets};
+  localStorage.setItem('ptw_label_settings', JSON.stringify(data));
+  fbSet('labelSettings/CPF', data).catch(()=>{});
+  document.getElementById('labelFontSizeDisplay').textContent=labelFontSize;
+}
+
+async function loadLabelSettings(){
+  let data=null;
+  try{const s=localStorage.getItem('ptw_label_settings');if(s)data=JSON.parse(s);}catch(e){}
+  if(!data){const d=await fbGet('labelSettings/CPF').catch(()=>null);if(d)data=d;}
+  if(data){
+    if(data.fontSize)labelFontSize=data.fontSize;
+    if(data.offsets)labelOffsets=data.offsets;
+    const el=document.getElementById('labelFontSizeDisplay');
+    if(el)el.textContent=labelFontSize;
+  }
+}
 
 function addNewArea(){
   document.getElementById('newAreaName').value='';
@@ -2176,16 +2295,23 @@ function mapReset(){
   const container=document.getElementById('mapContainer');
   const img=document.getElementById('mapImg');
   if(!container||!img||!img.naturalWidth)return;
-  const vv=window.visualViewport;
-  const W=vv?vv.width:(window.innerWidth||800);
-  const H=vv?vv.height:(window.innerHeight||600);
-  const mapW=W*0.50;
-  const mapH=H-60;
-  const scaleH=mapH/img.naturalHeight;
-  const scaleW=mapW/img.naturalWidth;
-  mapScale=Math.max(scaleH,scaleW); // fill entire area, no black borders
-  mapX=0; mapY=0;
-  mapApplyTransform();
+  let tries=0;
+  const doReset=()=>{
+    let cW=container.offsetWidth||container.getBoundingClientRect().width;
+    let cH=container.offsetHeight||container.getBoundingClientRect().height;
+    if((!cW||!cH)&&tries++<20){setTimeout(doReset,80);return;}
+    if(!cW||!cH){const vv=window.visualViewport;cW=(vv?vv.width:window.innerWidth);cH=(vv?vv.height:window.innerHeight)-60;}
+    // Scale to FIT whole image (both dimensions visible)
+    const scaleH=cH/img.naturalHeight;
+    const scaleW=cW/img.naturalWidth;
+    mapScale=Math.min(scaleH,scaleW); // min = fit whole image
+    // Center image
+    mapX=(cW - img.naturalWidth*mapScale)/2;
+    mapY=(cH - img.naturalHeight*mapScale)/2;
+    mapApplyTransform();
+    setTimeout(()=>loadCalibData().then(()=>renderMap()),80);
+  };
+  doReset();
 }
 function initMapEvents(){
   const container=document.getElementById('mapContainer');
@@ -2498,14 +2624,13 @@ function renderMap(){
   const W=img.naturalWidth, H=img.naturalHeight;
   const REF_W=910, REF_H=1280;
   const scaleX=W/REF_W, scaleY=H/REF_H;
+  // SVG must exactly match the image natural size for correct marker placement
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  // Use container size or viewport size — not img.offsetWidth which can be 0
-  const cont=document.getElementById('mapContainer');
-  const dispW=cont?cont.offsetWidth||(window.innerWidth*0.95):img.offsetWidth||W;
-  const dispH=cont?cont.offsetHeight||(window.innerHeight-60):img.offsetHeight||H;
-  svg.style.width=dispW+'px';
-  svg.style.height=dispH+'px';
-  const R=W*0.022;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.style.width=W+'px';
+  svg.style.height=H+'px';
+  const R=W*0.022*(typeof mapCircleScale!=="undefined"?mapCircleScale:1.0);
   // Enrich permits with area — manual zone (dashboard edit) takes priority over Excel
   const active=pArr().filter(p=>p.active&&p.location==='CPF').map(p=>{
     const xm=lookupExcel('CPF',p.num,p.type);
@@ -2523,9 +2648,60 @@ function renderMap(){
     if(!byArea[key][p.type])byArea[key][p.type]=[];
     byArea[key][p.type].push(p);
   });
+
+  // Draw permanent labels ONLY for areas with NO active permits
+  const labelFS=labelFontSize||18;
+  Object.entries(MAP_AREAS).forEach(([areaKey,area])=>{
+    // Skip if this area has active permits (circle will show the name)
+    if(byArea[areaKey])return;
+    const baseCx=(area.x/100)*W;
+    const baseCy=area.y*scaleY;
+    const off=labelOffsets[areaKey]||{dx:0,dy:0};
+    const cx=baseCx+(off.dx||0);
+    const cy=baseCy-R-8+(off.dy||0);
+    const lbl=area.name||areaKey;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx); t.setAttribute('y',cy);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('dominant-baseline','auto');
+    t.setAttribute('fill','#ffffff');
+    t.setAttribute('font-size',labelFS);
+    t.setAttribute('font-family','IBM Plex Mono, monospace');
+    t.setAttribute('font-weight','700');
+    t.setAttribute('paint-order','stroke');
+    t.setAttribute('stroke','rgba(0,0,0,0.9)');
+    t.setAttribute('stroke-width','3');
+    t.setAttribute('pointer-events','all');
+    t.style.cursor=labelMode?'move':'pointer';
+    t.textContent=lbl;
+    if(labelMode){
+      t.setAttribute('stroke','rgba(0,255,180,0.6)');
+      t.setAttribute('stroke-width','1.5');
+      t.addEventListener('mousedown', e=>{
+        e.stopPropagation(); e.preventDefault();
+        labelDragKey=areaKey;
+        _labelDragStartX=e.clientX;
+        _labelDragStartY=e.clientY;
+        _labelDragStartOffX=off.dx||0;
+        _labelDragStartOffY=off.dy||0;
+      });
+      t.addEventListener('touchstart', e=>{
+        e.stopPropagation();
+        const touch=e.touches[0];
+        labelDragKey=areaKey;
+        _labelDragStartX=touch.clientX;
+        _labelDragStartY=touch.clientY;
+        _labelDragStartOffX=off.dx||0;
+        _labelDragStartOffY=off.dy||0;
+      },{passive:true});
+    }
+    svg.appendChild(t);
+    enableLabelDoubleClick(t, areaKey);
+  });
+
+  // Draw permit circles on top
   Object.entries(byArea).forEach(([areaKey,typeMap])=>{
     const area=MAP_AREAS[areaKey];if(!area)return;
-    // x is percentage of width, y is absolute pixel in 910x1280 reference
     const cx=(area.x/100)*W;
     const cy=area.y*scaleY;
     const segments={},types=[];let total=0;
@@ -3608,6 +3784,7 @@ async function exportPermitsPDF(){
   return;
 }
 let mapImgData='';
+let mapCircleScale=1.0; // circle size multiplier
 let mapImgDataFLY='';
 function openMap(){
   const modal=document.getElementById('mMap');
@@ -3673,22 +3850,13 @@ function uploadMapImage(inp){
   SL(true,'UPLOADING MAP...');
   const r=new FileReader();
   r.onload=async e=>{
-    mapImgData=e.target.result;
-    // 1. Save to localStorage — instantly available on same device
-    try{localStorage.setItem('ptw_map_cpf',mapImgData);}catch(le){}
-    // 2. Update all maps immediately with full quality
+    // 1. Clear old image from localStorage and memory
+    try{localStorage.removeItem('ptw_map_cpf');}catch(le){}
+    mapImgData='';
     const img=document.getElementById('mapImg');
-    if(img){img.src=mapImgData;img.onload=()=>renderMap();}
-    const imgK=document.getElementById('kMapImgInline');
-    if(imgK){
-      imgK.src=mapImgData;
-      imgK.onload=()=>{
-        const n=document.getElementById('kMapNoImg');if(n)n.style.display='none';
-        initKMapEvents();kMapFit();
-        loadCalibData().then(()=>renderKMapInline());
-      };
-    }
-    // 3. Compress image for Firebase (max 2000px width, JPEG 80%)
+    if(img){img.src='';}
+
+    // 2. Compress image (max 2000px, JPEG 80%) for Firebase
     const original=new Image();
     original.onload=async function(){
       const MAX=2000;
@@ -3700,13 +3868,43 @@ function uploadMapImage(inp){
       cv.getContext('2d').drawImage(original,0,0,w,h);
       const compressed=cv.toDataURL('image/jpeg',0.80);
       const sizeMB=(compressed.length*0.75/1024/1024).toFixed(1);
-      // Save compressed to Firebase
+
+      // 3. Save to Firebase (overwrite old)
       await fbSet('mapImage/CPF',{data:compressed,ts:Date.now()},120000)
         .catch(e=>console.warn('Map Firebase:',e.message));
+
+      // 4. Save to localStorage
+      try{localStorage.setItem('ptw_map_cpf',compressed);}catch(le){}
+
+      // 5. Show new image and enable pan/zoom
+      mapImgData=compressed;
+      if(img){
+        img.src=compressed;
+        img.onload=()=>{
+          mapScale=1; mapX=0; mapY=0;
+          mapApplyTransform();
+          setTimeout(()=>{
+            mapReset();
+            loadCalibData().then(()=>renderMap());
+          },100);
+        };
+      }
+
+      // 6. Update KEBL map too
+      const imgK=document.getElementById('kMapImgInline');
+      if(imgK){
+        imgK.src=compressed;
+        imgK.onload=()=>{
+          const n=document.getElementById('kMapNoImg');if(n)n.style.display='none';
+          initKMapEvents();kMapFit();
+          loadCalibData().then(()=>renderKMapInline());
+        };
+      }
+
       SL(false);
-      toast('✅ Map uploaded & synced ('+sizeMB+'MB compressed)');
+      toast('✅ Map uploaded & synced ('+sizeMB+'MB)');
     };
-    original.src=mapImgData;
+    original.src=e.target.result;
   };
   r.readAsDataURL(file);
 }
@@ -3815,7 +4013,7 @@ async function enterC(){
   renderC();updNBadge();
   // Fetch fresh from Firebase
   SL(true,'LOADING DATA...');
-  try{await Promise.all([loadPermits(),loadPending(),loadUsers(),loadExcelData(),loadMapImage()]);}catch(e){}
+  try{await Promise.all([loadPermits(),loadPending(),loadUsers(),loadExcelData(),loadMapImage(),loadLabelSettings()]);}catch(e){}
   SL(false);
   cleanOldPermits();renderC();updNBadge();
   initFirebaseSDK();
@@ -4839,5 +5037,212 @@ function dismissBanner(){
 }
 </script>
 
+
+<!-- AREAS MANAGER MODAL -->
+<div class="moverlay" id="mAreasManager">
+  <div class="modal" style="width:620px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="mhdr" style="position:sticky;top:0;z-index:10;background:var(--surface);flex-shrink:0">
+      <span class="mtitle" style="color:#00ccff">✏️ Edit Areas / المناطق</span>
+      <button class="mclose" onclick="cm('mAreasManager')">×</button>
+    </div>
+    <div style="padding:10px 16px;flex-shrink:0;background:#1a2535;border-bottom:1px solid rgba(255,255,255,.1)">
+      <button onclick="addAreaFromManager()" style="background:#00cc88;color:#000;border:none;padding:7px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;font-weight:700;border-radius:4px">➕ ADD NEW AREA</button>
+      <button onclick="saveAreasFromManager()" style="background:#ffc800;color:#000;border:none;padding:7px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;font-weight:700;border-radius:4px;margin-left:8px">💾 SAVE ALL</button>
+      <span id="areasSaveStatus" style="color:#00cc88;font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:12px"></span>
+    </div>
+    <div class="mbody" id="mAreasBody" style="overflow-y:auto;flex:1;padding:10px 16px"></div>
+  </div>
+</div>
+
+<script>
+
+// ── AREAS MANAGER ────────────────────────────────────────────────────────────
+function openAreasManager(){
+  document.getElementById('mAreasManager').classList.add('open');
+  renderAreasManager();
+}
+
+function renderAreasManager(){
+  const body=document.getElementById('mAreasBody');
+  const allAreas={...MAP_AREAS};
+  const keys=Object.keys(allAreas).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  body.innerHTML=`
+    <div style="margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text2)">
+      ${keys.length} areas total — edit name or key, then SAVE ALL
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11px">
+      <thead>
+        <tr style="background:#1a2535;color:var(--gold)">
+          <th style="padding:6px 8px;text-align:left;width:30%">KEY (Zone ID)</th>
+          <th style="padding:6px 8px;text-align:left;width:40%">NAME (Label)</th>
+          <th style="padding:6px 8px;text-align:center;width:30%">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="areasTableBody">
+        ${keys.map(k=>`
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)" data-key="${k}">
+            <td style="padding:5px 8px">
+              <input value="${k}" data-field="key" style="width:100%;background:#1a2535;border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:3px" onchange="markAreaDirty(this)">
+            </td>
+            <td style="padding:5px 8px">
+              <input value="${allAreas[k].name||k}" data-field="name" style="width:100%;background:#1a2535;border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:3px" onchange="markAreaDirty(this)">
+            </td>
+            <td style="padding:5px 8px;text-align:center">
+              <button onclick="deleteAreaFromManager('${k}')" style="background:rgba(255,50,50,.2);border:1px solid rgba(255,50,50,.4);color:#ff6666;padding:3px 10px;font-size:10px;cursor:pointer;border-radius:3px">🗑️ DELETE</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function markAreaDirty(inp){
+  inp.style.borderColor='#ffc800';
+}
+
+function addAreaFromManager(){
+  showConfirm(
+    '➕ Add New Area',
+    `<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <div>
+        <label style="font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace">ZONE ID (e.g. 184, SS01, LAB)</label>
+        <input id="newAreaKey" placeholder="e.g. 184" style="width:100%;margin-top:4px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;border-radius:4px">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace">DISPLAY NAME (e.g. Area 184)</label>
+        <input id="newAreaName" placeholder="e.g. Area 184" style="width:100%;margin-top:4px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;border-radius:4px">
+      </div>
+    </div>`,
+    ()=>{
+      const k=(document.getElementById('newAreaKey').value||'').trim();
+      const name=(document.getElementById('newAreaName').value||'').trim();
+      if(!k){toast('❌ Zone ID required',true);return;}
+      if(MAP_AREAS[k]){toast('❌ Area already exists: '+k,true);return;}
+      MAP_AREAS[k]={x:50,y:640,name:name||k};
+      calibAreas[k]={...MAP_AREAS[k]};
+      renderAreasManager();
+      document.getElementById('areasSaveStatus').textContent='⚠️ Unsaved — click SAVE ALL';
+      toast('✅ Area added: '+k+' — click SAVE ALL');
+    },
+    'ADD'
+  );
+  setTimeout(()=>{const el=document.getElementById('newAreaKey');if(el)el.focus();},200);
+}
+
+function deleteAreaFromManager(key){
+  confirmDeleteArea(key);
+}
+
+async function saveAreasFromManager(){
+  // Read all table rows
+  const rows=document.querySelectorAll('#areasTableBody tr[data-key]');
+  const newAreas={};
+  rows.forEach(row=>{
+    const oldKey=row.getAttribute('data-key');
+    const newKey=row.querySelector('[data-field="key"]').value.trim();
+    const name=row.querySelector('[data-field="name"]').value.trim();
+    if(!newKey)return;
+    const existing=MAP_AREAS[oldKey]||{x:50,y:640};
+    newAreas[newKey]={x:existing.x,y:existing.y,name:name||newKey};
+  });
+
+  // Update MAP_AREAS
+  // Remove old keys
+  Object.keys(MAP_AREAS).forEach(k=>{ if(!newAreas[k]) delete MAP_AREAS[k]; });
+  // Add/update new
+  Object.assign(MAP_AREAS, newAreas);
+  Object.assign(calibAreas, newAreas);
+
+  // Save to Firebase + localStorage
+  document.getElementById('areasSaveStatus').textContent='⏳ Saving...';
+  await fbSet('mapCalib', calibAreas).catch(()=>{});
+  localStorage.setItem('mapCalibAreas', JSON.stringify(calibAreas));
+
+  document.getElementById('areasSaveStatus').textContent='✅ Saved!';
+  toast('✅ Areas saved to Firebase');
+  renderAreasManager();
+  renderMap();
+}
+
+// ── Double-click on label to edit inline ─────────────────────────────────────
+function enableLabelDoubleClick(textEl, areaKey){
+  textEl.style.cursor='pointer';
+  // Double-click = edit
+  textEl.addEventListener('dblclick', e=>{
+    e.stopPropagation();
+    openEditArea(areaKey);
+  });
+  // Right-click = context menu with edit + delete
+  textEl.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    showAreaContextMenu(e.clientX, e.clientY, areaKey);
+  });
+}
+
+function showAreaContextMenu(x, y, areaKey){
+  // Remove existing menu
+  const old=document.getElementById('areaCtxMenu');
+  if(old)old.remove();
+  const menu=document.createElement('div');
+  menu.id='areaCtxMenu';
+  menu.style.cssText=`position:fixed;left:${x}px;top:${y}px;background:#1a2535;border:1px solid var(--gold);border-radius:6px;z-index:99999;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.6);overflow:hidden;font-family:'IBM Plex Mono',monospace;font-size:12px`;
+  menu.innerHTML=`
+    <div style="padding:8px 12px;color:var(--gold);font-size:10px;border-bottom:1px solid rgba(255,255,255,.1)">${areaKey}</div>
+    <div onclick="openEditArea('${areaKey}');document.getElementById('areaCtxMenu').remove()" style="padding:10px 14px;color:#fff;cursor:pointer;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">✏️ Edit Name</div>
+    <div onclick="confirmDeleteArea('${areaKey}');document.getElementById('areaCtxMenu').remove()" style="padding:10px 14px;color:#ff6666;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.1)" onmouseover="this.style.background='rgba(255,50,50,.15)'" onmouseout="this.style.background='transparent'">🗑️ Delete Area</div>
+  `;
+  document.body.appendChild(menu);
+  // Close on outside click
+  setTimeout(()=>{
+    document.addEventListener('click', ()=>{const m=document.getElementById('areaCtxMenu');if(m)m.remove();}, {once:true});
+  },100);
+}
+
+function openEditArea(areaKey){
+  const currentName=MAP_AREAS[areaKey]?MAP_AREAS[areaKey].name||areaKey:areaKey;
+  showConfirm(
+    '✏️ Edit Area',
+    `<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <div>
+        <label style="font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace">ZONE ID</label>
+        <input id="editAreaKey" value="${areaKey}" style="width:100%;margin-top:4px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;border-radius:4px">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace">DISPLAY NAME</label>
+        <input id="editAreaName" value="${currentName}" style="width:100%;margin-top:4px;background:#1a2535;border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;border-radius:4px">
+      </div>
+    </div>`,
+    ()=>{
+      const newKey=(document.getElementById('editAreaKey').value||'').trim();
+      const newName=(document.getElementById('editAreaName').value||'').trim()||newKey;
+      if(!newKey)return;
+      const data={...MAP_AREAS[areaKey],name:newName};
+      if(newKey!==areaKey){delete MAP_AREAS[areaKey];delete calibAreas[areaKey];}
+      MAP_AREAS[newKey]=data;
+      calibAreas[newKey]=data;
+      fbSet('mapCalib', calibAreas).catch(()=>{});
+      localStorage.setItem('mapCalibAreas', JSON.stringify(calibAreas));
+      toast('✅ Area updated: '+newName);
+      renderMap();
+    },
+    'SAVE'
+  );
+  setTimeout(()=>{const el=document.getElementById('editAreaName');if(el){el.focus();el.select();}},200);
+}
+
+function confirmDeleteArea(areaKey){
+  showConfirm('🗑️ Delete Area', 'Delete area: <b>'+areaKey+'</b>?<br><small style="color:var(--text2)">This will remove it from the map permanently.</small>', ()=>{
+    delete MAP_AREAS[areaKey];
+    delete calibAreas[areaKey];
+    fbSet('mapCalib', calibAreas).catch(()=>{});
+    localStorage.setItem('mapCalibAreas', JSON.stringify(calibAreas));
+    toast('✅ Area deleted: '+areaKey);
+    renderMap();
+  }, 'DELETE');
+}
+
+</script>
 </body>
 </html>
