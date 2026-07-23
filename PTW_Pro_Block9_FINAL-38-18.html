@@ -4682,7 +4682,7 @@ async function issueP(){
   const desc=document.getElementById('pDesc').value.trim();
   if(!num){toast('❌ أدخل رقم التصريح',true);return;}
   if(pArr().some(p=>p.active&&p.num.toLowerCase()===num.toLowerCase()&&p.location===selLoc)){
-    toast('⚠️ هذا التصريح مفعّل بالفعل',true);return;
+    toast('⚠️ This permit is already active',true);return;
   }
   SL(true,'ACTIVATING...');
   const shiftLabel={DAY:'Day ☀️',NIGHT:'Night 🌙',DAY_NIGHT:'Day & Night 🌗'};
